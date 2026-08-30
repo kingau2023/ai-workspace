@@ -97,6 +97,38 @@ def test_document_upload_and_chat_flow():
     assert delete_response.status_code == 204
 
 
+def test_invalid_inputs_and_upload_limits():
+    user = unique_user('limits-user')
+    created = client.post('/auth/register', json=user)
+    assert created.status_code == 200
+    token = created.json()['access_token']
+    headers = {'Authorization': f'Bearer {token}'}
+
+    workspace = client.post('/workspaces', json={'name': 'Validate'}, headers=headers)
+    assert workspace.status_code == 200
+    workspace_id = workspace.json()['id']
+
+    blank_workspace = client.post('/workspaces', json={'name': ''}, headers=headers)
+    assert blank_workspace.status_code == 422
+
+    blank_note = client.post(f'/workspaces/{workspace_id}/notes', json={'title': ''}, headers=headers)
+    assert blank_note.status_code == 422
+
+    oversized = client.post(
+        f'/workspaces/{workspace_id}/documents',
+        headers=headers,
+        files={'file': ('big.txt', b'a' * 11000000, 'text/plain')},
+    )
+    assert oversized.status_code == 413
+
+    invalid_type = client.post(
+        f'/workspaces/{workspace_id}/documents',
+        headers=headers,
+        files={'file': ('bad.bin', b'not-a-text-file', 'application/x-msdownload')},
+    )
+    assert invalid_type.status_code == 400
+
+
 def test_cross_user_forbidden():
     user_a = unique_user('cross-a')
     user_b = unique_user('cross-b')
