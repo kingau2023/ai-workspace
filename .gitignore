@@ -1,13 +1,33 @@
-# Python virtual environment
+# Python
 backend/.venv/
-
-# Environment files
-backend/.env
-.env
-
-# Python cache
 __pycache__/
 *.py[cod]
+*.pyo
+*.pyd
 
-# Local database data
+# Environment files
+.env
+backend/.env
+.env.local
+.env.*.local
+
+# Database and uploads
 *.sqlite3
+backend/uploads/
+
+# Node
+frontend/node_modules/
+frontend/.next/
+frontend/out/
+frontend/coverage/
+
+# Build artifacts
+build/
+dist/
+
+# OS/editor
+.DS_Store
+.vscode/
+
+# Logs
+*.log

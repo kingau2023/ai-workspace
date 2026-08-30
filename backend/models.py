@@ -29,6 +29,10 @@ class User(Base):
         back_populates="owner",
         cascade="all, delete-orphan",
     )
+    documents: Mapped[list["Document"]] = relationship(
+        back_populates="owner",
+        cascade="all, delete-orphan",
+    )
 
 
 class Workspace(Base):
@@ -53,6 +57,10 @@ class Workspace(Base):
         back_populates="workspace",
         cascade="all, delete-orphan",
     )
+    documents: Mapped[list["Document"]] = relationship(
+        back_populates="workspace",
+        cascade="all, delete-orphan",
+    )
 
 
 class Note(Base):
@@ -73,3 +81,29 @@ class Note(Base):
     )
 
     workspace: Mapped[Workspace] = relationship(back_populates="notes")
+
+
+class Document(Base):
+    __tablename__ = "documents"
+
+    id: Mapped[int] = mapped_column(primary_key=True, index=True)
+    title: Mapped[str] = mapped_column(String(150), nullable=False)
+    filename: Mapped[str] = mapped_column(String(255), nullable=False)
+    content_type: Mapped[str] = mapped_column(String(100), nullable=False)
+    size_bytes: Mapped[int] = mapped_column(nullable=False, default=0)
+    storage_path: Mapped[str] = mapped_column(String(500), nullable=False)
+    text_content: Mapped[str | None] = mapped_column(Text, nullable=True)
+    workspace_id: Mapped[int] = mapped_column(ForeignKey("workspaces.id"), nullable=False, index=True)
+    owner_id: Mapped[int] = mapped_column(ForeignKey("users.id"), nullable=False, index=True)
+    created_at: Mapped[datetime] = mapped_column(
+        default=lambda: datetime.now(timezone.utc),
+        nullable=False,
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        default=lambda: datetime.now(timezone.utc),
+        onupdate=lambda: datetime.now(timezone.utc),
+        nullable=False,
+    )
+
+    workspace: Mapped[Workspace] = relationship(back_populates="documents")
+    owner: Mapped[User] = relationship(back_populates="documents")
