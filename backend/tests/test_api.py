@@ -59,6 +59,44 @@ def test_auth_and_workspace_flow():
     assert resp.status_code == 204
 
 
+def test_document_upload_and_chat_flow():
+    user = unique_user('doc-user')
+    created = client.post('/auth/register', json=user)
+    assert created.status_code == 200
+    token = created.json()['access_token']
+    headers = {'Authorization': f'Bearer {token}'}
+
+    workspace = client.post('/workspaces', json={'name': 'Docs Workspace'}, headers=headers)
+    assert workspace.status_code == 200
+    workspace_id = workspace.json()['id']
+
+    upload = client.post(
+        f'/workspaces/{workspace_id}/documents',
+        headers=headers,
+        files={'file': ('research.txt', b'AI research on knowledge graphs and retrieval augmentation.', 'text/plain')},
+        data={'title': 'Research Notes'},
+    )
+    assert upload.status_code == 200
+    document_id = upload.json()['id']
+
+    list_response = client.get(f'/workspaces/{workspace_id}/documents', headers=headers)
+    assert list_response.status_code == 200
+    assert any(item['id'] == document_id for item in list_response.json())
+
+    chat = client.post(
+        f'/workspaces/{workspace_id}/ai/chat',
+        json={'message': 'What is the research about?', 'limit': 5},
+        headers=headers,
+    )
+    assert chat.status_code == 200
+    payload = chat.json()
+    assert payload['score'] >= 0.0
+    assert 'knowledge' in payload['answer'].lower() or 'research' in payload['answer'].lower()
+
+    delete_response = client.delete(f'/workspaces/{workspace_id}/documents/{document_id}', headers=headers)
+    assert delete_response.status_code == 204
+
+
 def test_cross_user_forbidden():
     user_a = unique_user('cross-a')
     user_b = unique_user('cross-b')

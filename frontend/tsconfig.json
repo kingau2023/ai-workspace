@@ -8,6 +8,7 @@
     "noEmit": true,
     "esModuleInterop": true,
     "module": "esnext",
+    "types": ["vitest/globals", "@testing-library/jest-dom"],
     "moduleResolution": "bundler",
     "resolveJsonModule": true,
     "isolatedModules": true,

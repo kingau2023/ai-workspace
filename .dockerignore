@@ -1,0 +1,15 @@
+**/.venv/
+**/__pycache__/
+**/.pytest_cache/
+**/.next/
+**/node_modules/
+**/.git/
+**/.DS_Store
+**/*.pyc
+**/*.pyo
+**/*.log
+.env
+backend/.env
+frontend/.env*
+backend/uploads/
+.gitignore

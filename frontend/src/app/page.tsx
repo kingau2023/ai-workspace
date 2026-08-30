@@ -116,10 +116,25 @@ export default function HomePage() {
   }, [loadWorkspaces]);
 
   useEffect(() => {
-    if (!token) {
+    if (token === null) {
       return;
     }
-    void loadCurrentUser(token);
+
+    const currentToken = token;
+    let isMounted = true;
+
+    async function bootstrapUser() {
+      if (!isMounted) {
+        return;
+      }
+      await loadCurrentUser(currentToken);
+    }
+
+    void bootstrapUser();
+
+    return () => {
+      isMounted = false;
+    };
   }, [loadCurrentUser, token]);
 
   const currentWorkspaceName = useMemo(() => selectedWorkspace?.name || 'No workspace selected', [selectedWorkspace]);

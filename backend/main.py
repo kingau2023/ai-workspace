@@ -1,7 +1,7 @@
 import os
 from collections import Counter
 from datetime import datetime
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 import re
 
 from fastapi import Depends, FastAPI, File, Form, HTTPException, Response, UploadFile, status
@@ -15,6 +15,18 @@ from models import Document, Note, User, Workspace
 
 UPLOAD_ROOT = Path(os.getenv("UPLOAD_ROOT", "/workspaces/ai-workspace/backend/uploads"))
 UPLOAD_ROOT.mkdir(parents=True, exist_ok=True)
+ALLOWED_ORIGINS = [
+    origin.strip()
+    for origin in os.getenv("ALLOWED_ORIGINS", "http://localhost:3000,http://127.0.0.1:3000").split(",")
+    if origin.strip()
+]
+
+
+def sanitize_filename(filename: str) -> str:
+    candidate = PurePosixPath(filename).name
+    candidate = candidate.strip() or "uploaded-file"
+    candidate = re.sub(r"[^A-Za-z0-9._-]", "-", candidate)
+    return candidate[:255] or "uploaded-file"
 
 
 class WorkspaceCreate(BaseModel):
@@ -96,7 +108,7 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", "http://127.0.0.1:3000"],
+    allow_origins=ALLOWED_ORIGINS,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -344,7 +356,8 @@ async def upload_document_for_workspace(
 ):
     workspace = get_own_workspace(db, current_user, workspace_id)
     file_bytes = await file.read()
-    filename = file.filename or "uploaded-file"
+    original_name = file.filename or "uploaded-file"
+    filename = sanitize_filename(original_name)
     safe_title = title.strip() or filename.rsplit(".", 1)[0]
     storage_dir = UPLOAD_ROOT / str(current_user.id) / str(workspace.id)
     storage_dir.mkdir(parents=True, exist_ok=True)
